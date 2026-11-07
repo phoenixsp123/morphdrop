@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MorphDrop</title>
+    <script>
+      (function() {
+        try {
+          var pref = localStorage.getItem('morphdrop_theme');
+          if (!pref) {
+            var raw = localStorage.getItem('morphdrop_settings');
+            if (raw) {
+              var s = JSON.parse(raw);
+              if (s && s.theme) pref = s.theme;
+            }
+          }
+          pref = pref || 'system';
+          var isDark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          var root = document.documentElement;
+          if (isDark) {
+            root.classList.add('dark');
+            root.classList.remove('light');
+            root.style.colorScheme = 'dark';
+          } else {
+            root.classList.add('light');
+            root.classList.remove('dark');
+            root.style.colorScheme = 'light';
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <style>
+      /* Prevent flash of unstyled content */
+      html { background-color: #0f0f13; }
+      html.light { background-color: #fafafa; }
+    </style>
+  </head>
+  <body class="overflow-hidden">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

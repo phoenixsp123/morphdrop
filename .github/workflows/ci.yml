@@ -1,0 +1,91 @@
+name: MorphDrop CI & Release Build
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    name: Test (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-latest, windows-latest]
+        include:
+          - platform: macos-latest
+            os: macos-latest
+          - platform: windows-latest
+            os: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Setup Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+
+      - name: Frontend Typecheck & Build
+        run: npm run build
+
+      - name: Run Backend Tests
+        run: cargo test
+        working-directory: ./src-tauri
+
+  build-packages:
+    name: Package (${{ matrix.platform }})
+    needs: test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-latest, windows-latest]
+        include:
+          - platform: macos-latest
+            os: macos-latest
+          - platform: windows-latest
+            os: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Setup Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+
+      - name: Build Tauri Desktop Application Bundle
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: 'MorphDrop v__VERSION__'
+          releaseBody: 'MorphDrop Universal File Converter & SmartDrop'
+          releaseDraft: true
+          prerelease: false
