@@ -1,4 +1,5 @@
 pub mod archive_engine;
+pub mod document_engine;
 pub mod image_engine;
 pub mod pdf_engine;
 pub mod structured_data_engine;
@@ -56,6 +57,7 @@ impl EngineManager {
         let engines: Vec<Box<dyn ConversionEngine>> = vec![
             Box::new(image_engine::ImageEngine),
             Box::new(pdf_engine::PdfEngine),
+            Box::new(document_engine::DocumentEngine),
             Box::new(archive_engine::ArchiveEngine),
             Box::new(structured_data_engine::StructuredDataEngine),
         ];

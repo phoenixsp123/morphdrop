@@ -87,6 +87,14 @@ const FORMAT_META: Record<OutputFormat, FormatMeta> = {
     iconName: "FileText",
     description: "Portable document format",
   },
+  Docx: {
+    label: "DOCX",
+    extension: ".docx",
+    category: "Documents",
+    color: "#2563eb",
+    iconName: "FileText",
+    description: "Microsoft Word document",
+  },
   Zip: {
     label: "ZIP",
     extension: ".zip",

@@ -290,25 +290,39 @@ impl DependencyManager {
         Ok(output.to_path_buf())
     }
 
-    /// Convert document to PDF using LibreOffice headless safely.
+    /// Convert document using LibreOffice headless safely (e.g. DOCX -> PDF or PDF -> DOCX).
     pub fn convert_document_with_libreoffice(
         input: &Path,
         output_dir: &Path,
+        target_format: &str,
     ) -> Result<PathBuf, MorphDropError> {
         let status = Self::probe_libreoffice();
         if !status.is_available {
             return Err(MorphDropError::ConversionError(format!(
-                "LibreOffice is required for document conversion to PDF but was not found. {}",
+                "LibreOffice is required for document conversion (DOCX ↔ PDF) but was not found. {}",
                 status.install_hint
             )));
         }
 
         let bin = status.path.as_deref().unwrap_or("soffice");
         let mut cmd = Command::new(bin);
-        cmd.arg("--headless")
-           .arg("--convert-to")
-           .arg("pdf")
-           .arg("--outdir")
+        cmd.arg("--headless");
+
+        let input_ext = input
+            .extension()
+            .map(|e| e.to_string_lossy().to_lowercase())
+            .unwrap_or_default();
+        let target_lower = target_format.to_lowercase();
+
+        // PDF -> DOCX requires the writer_pdf_import filter so it opens in Writer rather than Draw
+        if input_ext == "pdf" && target_lower == "docx" {
+            cmd.arg("--infilter=writer_pdf_import");
+            cmd.arg("--convert-to").arg("docx");
+        } else {
+            cmd.arg("--convert-to").arg(&target_lower);
+        }
+
+        cmd.arg("--outdir")
            .arg(output_dir)
            .arg(input);
 
@@ -318,19 +332,44 @@ impl DependencyManager {
 
         if !output_status.status.success() {
             let stderr = String::from_utf8_lossy(&output_status.stderr);
+            let stdout = String::from_utf8_lossy(&output_status.stdout);
+            let err_text = if !stderr.trim().is_empty() {
+                stderr.to_string()
+            } else if !stdout.trim().is_empty() {
+                stdout.to_string()
+            } else {
+                "Unknown LibreOffice error".to_string()
+            };
             return Err(MorphDropError::ConversionError(format!(
                 "LibreOffice document conversion failed: {}",
-                stderr
+                err_text
             )));
         }
 
         let stem = input.file_stem().map(|s| s.to_string_lossy()).unwrap_or_default();
-        let expected_pdf = output_dir.join(format!("{}.pdf", stem));
-        if expected_pdf.exists() {
-            Ok(expected_pdf)
+        let expected_file = output_dir.join(format!("{}.{}", stem, target_lower));
+        if expected_file.exists() {
+            Ok(expected_file)
         } else {
+            // Case-insensitive check of output_dir
+            if let Ok(entries) = std::fs::read_dir(output_dir) {
+                for entry in entries.flatten() {
+                    let p = entry.path();
+                    if p.is_file() {
+                        if let Some(ext) = p.extension() {
+                            if ext.to_string_lossy().to_lowercase() == target_lower {
+                                if let Some(s) = p.file_stem() {
+                                    if s.to_string_lossy().to_lowercase() == stem.to_lowercase() {
+                                        return Ok(p);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             Err(MorphDropError::ConversionError(
-                "LibreOffice succeeded but output PDF was not found".into(),
+                format!("LibreOffice succeeded but output file '{}.{}' was not found", stem, target_lower),
             ))
         }
     }

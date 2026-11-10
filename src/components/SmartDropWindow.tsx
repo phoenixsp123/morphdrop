@@ -23,6 +23,7 @@ import {
   Upload,
   Plus,
   FileStack,
+  FileText,
   Loader2,
 } from 'lucide-react';
 import type { FileInfo } from '../types';
@@ -196,6 +197,60 @@ export const SmartDropWindow: React.FC = () => {
     }
   }, [files]);
 
+  // Smart Action: Convert to PDF (for DOCX)
+  const handleConvertToPdf = useCallback(async () => {
+    if (files.length === 0) return;
+    setIsProcessing(true);
+    setStatusMessage('Converting to PDF...');
+    try {
+      const firstParent = files[0].path.substring(0, files[0].path.lastIndexOf('/'));
+      const paths = files.map((f) => f.path);
+      await startConversion(paths, 'Pdf', firstParent, {
+        image_quality: null,
+        image_width: null,
+        image_height: null,
+        preserve_aspect_ratio: true,
+        preserve_metadata: false,
+        compression_level: null,
+        pdf_pages: null,
+      });
+      setStatusMessage('Converted to PDF!');
+      setTimeout(() => setStatusMessage(null), 3500);
+    } catch (err) {
+      setStatusMessage(`Error: ${err}`);
+      setTimeout(() => setStatusMessage(null), 4000);
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [files]);
+
+  // Smart Action: Convert to DOCX (for PDF)
+  const handleConvertToDocx = useCallback(async () => {
+    if (files.length === 0) return;
+    setIsProcessing(true);
+    setStatusMessage('Converting to DOCX...');
+    try {
+      const firstParent = files[0].path.substring(0, files[0].path.lastIndexOf('/'));
+      const paths = files.map((f) => f.path);
+      await startConversion(paths, 'Docx', firstParent, {
+        image_quality: null,
+        image_width: null,
+        image_height: null,
+        preserve_aspect_ratio: true,
+        preserve_metadata: false,
+        compression_level: null,
+        pdf_pages: null,
+      });
+      setStatusMessage('Converted to DOCX!');
+      setTimeout(() => setStatusMessage(null), 3500);
+    } catch (err) {
+      setStatusMessage(`Error: ${err}`);
+      setTimeout(() => setStatusMessage(null), 4000);
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [files]);
+
   // Smart Action: Reveal in Finder / Explorer
   const handleReveal = async () => {
     if (files.length > 0) {
@@ -204,8 +259,12 @@ export const SmartDropWindow: React.FC = () => {
   };
 
   const totalSize = files.reduce((acc, f) => acc + f.size_bytes, 0);
-  const hasImagesOrPdfs = files.some((f) =>
-    ['png', 'jpg', 'jpeg', 'webp', 'pdf', 'bmp'].includes(f.extension.toLowerCase()),
+  const hasImages = files.some((f) =>
+    ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'tiff', 'gif', 'avif'].includes(f.extension.toLowerCase()),
+  );
+  const hasPdfs = files.some((f) => f.extension.toLowerCase() === 'pdf');
+  const hasDocx = files.some((f) =>
+    ['docx', 'doc', 'odt', 'rtf'].includes(f.extension.toLowerCase()),
   );
 
   return (
@@ -407,8 +466,44 @@ export const SmartDropWindow: React.FC = () => {
                   </div>
                 </button>
 
-                {/* Action 3: Combine PDF (or Reveal) */}
-                {hasImagesOrPdfs ? (
+                {/* Action 3: Contextual Document / PDF Action */}
+                {hasDocx ? (
+                  <button
+                    onClick={handleConvertToPdf}
+                    disabled={isProcessing}
+                    className="p-2 rounded-2xl bg-white/50 dark:bg-white/[0.04] hover:bg-rose-500/15 border border-white/60 dark:border-white/10 hover:border-rose-500/30 text-left transition-all flex items-center gap-2 group cursor-pointer shadow-[inset_0_1px_1px_rgba(255,255,255,0.7)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)] disabled:opacity-50"
+                  >
+                    <div className="w-6 h-6 rounded-lg bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-500/20">
+                      <FileText size={12} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-gray-800 dark:text-zinc-200 leading-tight">
+                        DOCX → PDF
+                      </p>
+                      <p className="text-[10px] text-gray-500 dark:text-zinc-400 truncate">
+                        Export as PDF
+                      </p>
+                    </div>
+                  </button>
+                ) : hasPdfs ? (
+                  <button
+                    onClick={handleConvertToDocx}
+                    disabled={isProcessing}
+                    className="p-2 rounded-2xl bg-white/50 dark:bg-white/[0.04] hover:bg-blue-500/15 border border-white/60 dark:border-white/10 hover:border-blue-500/30 text-left transition-all flex items-center gap-2 group cursor-pointer shadow-[inset_0_1px_1px_rgba(255,255,255,0.7)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)] disabled:opacity-50"
+                  >
+                    <div className="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/20">
+                      <FileText size={12} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-gray-800 dark:text-zinc-200 leading-tight">
+                        PDF → DOCX
+                      </p>
+                      <p className="text-[10px] text-gray-500 dark:text-zinc-400 truncate">
+                        Export as Word doc
+                      </p>
+                    </div>
+                  </button>
+                ) : hasImages ? (
                   <button
                     onClick={handleCombinePdf}
                     disabled={isProcessing}
@@ -422,7 +517,7 @@ export const SmartDropWindow: React.FC = () => {
                         Combine PDF
                       </p>
                       <p className="text-[10px] text-gray-500 dark:text-zinc-400 truncate">
-                        Merge into single PDF
+                        Images into PDF
                       </p>
                     </div>
                   </button>

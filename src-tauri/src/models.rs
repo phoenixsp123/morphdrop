@@ -27,6 +27,7 @@ pub enum OutputFormat {
     Avif,
     // Document
     Pdf,
+    Docx,
     // Archive
     Zip,
     // Structured data
@@ -51,6 +52,7 @@ impl OutputFormat {
             OutputFormat::Ico => "ico",
             OutputFormat::Avif => "avif",
             OutputFormat::Pdf => "pdf",
+            OutputFormat::Docx => "docx",
             OutputFormat::Zip => "zip",
             OutputFormat::Json => "json",
             OutputFormat::Csv => "csv",
@@ -73,6 +75,7 @@ impl OutputFormat {
             OutputFormat::Ico => "ICO",
             OutputFormat::Avif => "AVIF",
             OutputFormat::Pdf => "PDF",
+            OutputFormat::Docx => "DOCX",
             OutputFormat::Zip => "ZIP",
             OutputFormat::Json => "JSON",
             OutputFormat::Csv => "CSV",

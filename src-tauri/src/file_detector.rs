@@ -118,9 +118,35 @@ fn detect_from_magic(header: &[u8], extension: &str, path: &Path) -> (FileType, 
         return (FileType::Document, "application/pdf".into());
     }
 
-    // ZIP (also covers XLSX, DOCX, etc.): 50 4B 03 04
+    // ZIP (also covers XLSX, DOCX, PPTX, ODT, etc.): 50 4B 03 04
     if header.len() >= 4 && header[..4] == [0x50, 0x4B, 0x03, 0x04] {
-        return (FileType::Archive, "application/zip".into());
+        match extension {
+            "docx" => {
+                return (
+                    FileType::Document,
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document".into(),
+                )
+            }
+            "xlsx" => {
+                return (
+                    FileType::Document,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet".into(),
+                )
+            }
+            "pptx" => {
+                return (
+                    FileType::Document,
+                    "application/vnd.openxmlformats-officedocument.presentationml.presentation".into(),
+                )
+            }
+            "odt" => {
+                return (
+                    FileType::Document,
+                    "application/vnd.oasis.opendocument.text".into(),
+                )
+            }
+            _ => return (FileType::Archive, "application/zip".into()),
+        }
     }
 
     // 7z: 37 7A BC AF 27 1C

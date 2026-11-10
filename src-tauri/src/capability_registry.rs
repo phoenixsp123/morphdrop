@@ -50,11 +50,37 @@ pub fn get_capabilities() -> Vec<ConversionCapability> {
     // For now, we support merge/split/images-to-pdf but not PDF rasterization.
     // PDF → PDF (merge / split) is handled internally, not as a format conversion.
 
+    // ----- Document Conversions (DOCX ↔ PDF) -----
+    for in_ext in &["docx", "doc", "odt", "rtf"] {
+        caps.push(ConversionCapability {
+            input_format: in_ext.to_string(),
+            output_format: OutputFormat::Pdf,
+            engine_name: "DocumentEngine".into(),
+            description: format!("{} → PDF", in_ext.to_uppercase()),
+        });
+    }
+
+    caps.push(ConversionCapability {
+        input_format: "pdf".into(),
+        output_format: OutputFormat::Docx,
+        engine_name: "DocumentEngine".into(),
+        description: "PDF → DOCX".into(),
+    });
+
+    for in_ext in &["doc", "odt", "rtf"] {
+        caps.push(ConversionCapability {
+            input_format: in_ext.to_string(),
+            output_format: OutputFormat::Docx,
+            engine_name: "DocumentEngine".into(),
+            description: format!("{} → DOCX", in_ext.to_uppercase()),
+        });
+    }
+
     // ----- Archive operations -----
     // Any file(s) → ZIP
     for ft_ext in &[
-        "png", "jpg", "jpeg", "gif", "bmp", "webp", "tiff", "tif", "ico", "avif", "pdf", "json",
-        "csv", "tsv", "yaml", "yml", "xml", "txt", "zip",
+        "png", "jpg", "jpeg", "gif", "bmp", "webp", "tiff", "tif", "ico", "avif", "pdf", "docx",
+        "doc", "odt", "rtf", "json", "csv", "tsv", "yaml", "yml", "xml", "txt", "zip",
     ] {
         caps.push(ConversionCapability {
             input_format: ft_ext.to_string(),
@@ -180,7 +206,7 @@ fn extensions_for_type(ft: &FileType) -> Vec<&'static str> {
         FileType::Image => vec![
             "png", "jpg", "jpeg", "webp", "bmp", "tiff", "tif", "gif", "ico", "avif",
         ],
-        FileType::Document => vec!["pdf"],
+        FileType::Document => vec!["pdf", "docx", "doc", "odt", "rtf"],
         FileType::Archive => vec!["zip"],
         FileType::StructuredData => vec!["json", "csv", "tsv", "yaml", "yml", "xml"],
         _ => vec![],

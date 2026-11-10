@@ -9,7 +9,7 @@ interface FormatSelectorProps {
 
 const formatCategories: { label: string; formats: OutputFormat[] }[] = [
   { label: 'Images', formats: ['Png', 'Jpeg', 'Webp', 'Bmp', 'Tiff', 'Gif', 'Ico', 'Avif'] },
-  { label: 'Documents', formats: ['Pdf', 'Txt'] },
+  { label: 'Documents', formats: ['Pdf', 'Docx', 'Txt'] },
   { label: 'Archives', formats: ['Zip'] },
   { label: 'Data', formats: ['Json', 'Csv', 'Tsv', 'Yaml', 'Xml'] },
 ];

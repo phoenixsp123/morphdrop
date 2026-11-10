@@ -23,6 +23,7 @@ export type OutputFormat =
   | "Ico"
   | "Avif"
   | "Pdf"
+  | "Docx"
   | "Zip"
   | "Json"
   | "Csv"

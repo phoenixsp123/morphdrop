@@ -244,10 +244,12 @@ pub fn convert_media_external(
 pub fn convert_office_external(
     input_path: String,
     output_dir: String,
+    target_format: Option<String>,
 ) -> Result<String, String> {
     let input = PathBuf::from(&input_path);
     let out_dir = PathBuf::from(&output_dir);
-    DependencyManager::convert_document_with_libreoffice(&input, &out_dir)
+    let target = target_format.unwrap_or_else(|| "pdf".to_string());
+    DependencyManager::convert_document_with_libreoffice(&input, &out_dir, &target)
         .map(|p| p.to_string_lossy().to_string())
         .map_err(|e| e.to_string())
 }
