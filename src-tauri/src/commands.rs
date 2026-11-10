@@ -46,12 +46,13 @@ pub async fn start_conversion(
         return Err("No input files provided".into());
     }
 
-    let out_path = PathBuf::from(&output_dir);
+    let out_path = crate::utils::resolve_output_dir(&output_dir, &input_files);
     if !out_path.exists() {
         std::fs::create_dir_all(&out_path).map_err(|e| e.to_string())?;
     }
+    let resolved_dir = out_path.to_string_lossy().to_string();
 
-    let job_id = job_queue.submit(input_files, output_format, output_dir, settings);
+    let job_id = job_queue.submit(input_files, output_format, resolved_dir, settings);
 
     let queue = Arc::clone(&job_queue);
     let jid = job_id.clone();
@@ -158,7 +159,10 @@ pub fn split_pdf(
     pages: Option<Vec<u32>>,
 ) -> Result<Vec<String>, String> {
     let input = PathBuf::from(&input_path);
-    let out_dir = PathBuf::from(&output_dir);
+    let out_dir = crate::utils::resolve_output_dir(&output_dir, std::slice::from_ref(&input_path));
+    if !out_dir.exists() {
+        std::fs::create_dir_all(&out_dir).map_err(|e| e.to_string())?;
+    }
     PdfEngine::split_pdf(&input, &out_dir, pages)
         .map(|paths| paths.iter().map(|p| p.to_string_lossy().to_string()).collect())
         .map_err(|e| e.to_string())
@@ -187,7 +191,10 @@ pub fn extract_archive(
     output_dir: String,
 ) -> Result<Vec<String>, String> {
     let archive = PathBuf::from(&archive_path);
-    let out_dir = PathBuf::from(&output_dir);
+    let out_dir = crate::utils::resolve_output_dir(&output_dir, std::slice::from_ref(&archive_path));
+    if !out_dir.exists() {
+        std::fs::create_dir_all(&out_dir).map_err(|e| e.to_string())?;
+    }
     ArchiveEngine::extract_zip(&archive, &out_dir)
         .map(|paths| paths.iter().map(|p| p.to_string_lossy().to_string()).collect())
         .map_err(|e| e.to_string())
@@ -247,7 +254,10 @@ pub fn convert_office_external(
     target_format: Option<String>,
 ) -> Result<String, String> {
     let input = PathBuf::from(&input_path);
-    let out_dir = PathBuf::from(&output_dir);
+    let out_dir = crate::utils::resolve_output_dir(&output_dir, std::slice::from_ref(&input_path));
+    if !out_dir.exists() {
+        std::fs::create_dir_all(&out_dir).map_err(|e| e.to_string())?;
+    }
     let target = target_format.unwrap_or_else(|| "pdf".to_string());
     DependencyManager::convert_document_with_libreoffice(&input, &out_dir, &target)
         .map(|p| p.to_string_lossy().to_string())

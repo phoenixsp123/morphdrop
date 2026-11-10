@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { FolderOpen, ArrowRight } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
+import { useSettings } from '../hooks/useSettings';
 import type { OutputFormat, ConversionSettings as SettingsType } from '../types';
 
 interface ConversionSettingsProps {
@@ -20,6 +21,7 @@ export default function ConversionSettings({
   onStartConversion,
   fileCount,
 }: ConversionSettingsProps) {
+  const { settings: appSettings } = useSettings();
   const [outputDir, setOutputDir] = useState('');
   const isImage = imageFormats.includes(format);
   const isLossy = format === 'Jpeg' || format === 'Webp' || format === 'Avif';
@@ -34,7 +36,7 @@ export default function ConversionSettings({
   };
 
   const handleStart = () => {
-    const dir = outputDir || '~/Desktop';
+    const dir = outputDir || appSettings.default_output_folder || '';
     onStartConversion(dir);
   };
 
@@ -153,7 +155,7 @@ export default function ConversionSettings({
             >
               <FolderOpen size={15} className="text-indigo-500 shrink-0" />
               <span className="truncate">
-                {outputDir || 'Choose folder (defaults to Desktop)'}
+                {outputDir || appSettings.default_output_folder || 'Default: Desktop'}
               </span>
             </button>
           </div>

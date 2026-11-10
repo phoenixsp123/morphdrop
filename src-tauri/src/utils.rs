@@ -96,6 +96,49 @@ pub fn format_file_size(bytes: u64) -> String {
     }
 }
 
+/// Resolve and sanitize an output directory string.
+/// Handles empty paths, `~` tilde expansions, non-existent directories,
+/// and falls back gracefully to the user's Desktop or input file folder.
+pub fn resolve_output_dir(raw_dir: &str, input_files: &[String]) -> PathBuf {
+    let trimmed = raw_dir.trim();
+
+    let home_dir = std::env::var("HOME")
+        .or_else(|_| std::env::var("USERPROFILE"))
+        .ok()
+        .map(PathBuf::from);
+
+    // If empty, resolve to default destination (Desktop or input file directory)
+    if trimmed.is_empty() {
+        if let Some(ref home) = home_dir {
+            let desktop = home.join("Desktop");
+            if desktop.exists() {
+                return desktop;
+            }
+        }
+        if let Some(first) = input_files.first() {
+            if let Some(parent) = Path::new(first).parent() {
+                if parent.exists() {
+                    return parent.to_path_buf();
+                }
+            }
+        }
+        return std::env::temp_dir();
+    }
+
+    // Expand ~ / ~/
+    if trimmed == "~" {
+        if let Some(home) = home_dir {
+            return home;
+        }
+    } else if trimmed.starts_with("~/") || trimmed.starts_with("~\\") {
+        if let Some(home) = home_dir {
+            return home.join(&trimmed[2..]);
+        }
+    }
+
+    PathBuf::from(trimmed)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -112,5 +155,17 @@ mod tests {
         assert_eq!(format_file_size(500), "500 B");
         assert_eq!(format_file_size(1024), "1.0 KB");
         assert_eq!(format_file_size(1_048_576), "1.0 MB");
+    }
+
+    #[test]
+    fn test_resolve_output_dir() {
+        let home = std::env::var("HOME").unwrap_or_default();
+        if !home.is_empty() {
+            let res = resolve_output_dir("~/Desktop", &[]);
+            assert_eq!(res, PathBuf::from(&home).join("Desktop"));
+
+            let empty_res = resolve_output_dir("", &[]);
+            assert!(empty_res.exists());
+        }
     }
 }
