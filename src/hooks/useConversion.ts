@@ -109,6 +109,7 @@ export function useConversion(): UseConversionReturn {
     }
     stopPolling();
     setIsConverting(false);
+    setError(null);
   }, [stopPolling]);
 
   const reset = useCallback(() => {

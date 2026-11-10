@@ -114,6 +114,16 @@ export default function App() {
     setView('home');
   }, [reset]);
 
+  const handleCancelConversion = useCallback(async () => {
+    try {
+      await cancelConversion();
+    } catch (e) {
+      console.error('Cancel conversion error:', e);
+    }
+    reset();
+    setView('home');
+  }, [cancelConversion, reset]);
+
   const handleRenamed = useCallback(async (newPaths: string[]) => {
     if (newPaths.length > 0) {
       const refreshed = await detectFiles(newPaths);
@@ -140,7 +150,7 @@ export default function App() {
             error={error}
             currentFile={files.length > 0 ? files[0].filename : ''}
             totalFiles={files.length}
-            onCancel={cancelConversion}
+            onCancel={handleCancelConversion}
             jobId={jobId}
           />
         );
